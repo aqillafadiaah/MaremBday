@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catch the 💗</title>
+  <link rel="icon" type="image/png" href="cat.png">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&display=swap" rel="stylesheet" />
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
+    body{
+      height:100vh;display:flex;align-items:center;justify-content:center;
+      background:linear-gradient(-45deg,#fee9f7,#e8f5fe,#fef2e8,#f0ffe8);
+      background-size:400% 400%;animation:gradientShift 15s ease infinite;overflow:hidden;
+    }
+    @keyframes gradientShift{
+      0%{background-position:0% 50%}
+      50%{background-position:100% 50%}
+      100%{background-position:0% 50%}
+    }
+    #game-container{position:relative;width:100%;height:100%;overflow:hidden;cursor:pointer;}
+    #score-container{
+      position:fixed;top:20px;left:50%;transform:translateX(-50%);
+      background:rgba(255,255,255,0.7);padding:10px 25px;border-radius:20px;
+      box-shadow:0 0 10px rgba(255,182,193,0.5);font-weight:600;color:#ff1493;backdrop-filter:blur(8px);
+    }
+    .pookie-meter{
+      position:fixed;top:80px;left:50%;transform:translateX(-50%);
+      width:250px;height:20px;background:rgba(255,255,255,0.6);
+      border-radius:10px;overflow:hidden;box-shadow:0 0 10px rgba(255,192,203,0.6);
+    }
+    .pookie-fill{width:0%;height:100%;background:linear-gradient(90deg,#ff69b4,#ff1493);transition:width 0.3s ease;}
+    #basket{
+      position:absolute;bottom:40px;left:50%;transform:translateX(-50%);
+      width:120px;height:80px;background:rgba(255,192,203,0.8);border-radius:0 0 50% 50%;
+      border:3px solid #ff69b4;text-align:center;font-size:36px;line-height:80px;
+      transition:transform 0.15s ease;box-shadow:0 5px 15px rgba(255,105,180,0.3);
+    }
+    #basket:active{transform:translateX(-50%) scale(0.95);}
+    .heart{position:absolute;font-size:28px;animation:fall linear forwards;user-select:none;}
+    @keyframes fall{from{transform:translateY(-30px);opacity:1;}to{transform:translateY(100vh);opacity:0;}}
+    .message{
+      position:fixed;top:45%;left:50%;transform:translate(-50%,-50%);
+      background:rgba(255,255,255,0.9);padding:30px 60px;border-radius:25px;
+      font-size:1.6rem;color:#ff1493;box-shadow:0 0 25px rgba(255,105,180,0.4);
+      text-align:center;opacity:0;transition:opacity 0.6s ease;z-index:20;line-height:1.5;
+    }
+    .float-msg{position:absolute;opacity:0;animation:popUp 1.2s ease forwards;}
+    @keyframes popUp{
+      0%{transform:translateY(20px) scale(0.8);opacity:0;}
+      40%{transform:translateY(-10px) scale(1.05);opacity:1;}
+      100%{transform:translateY(-30px) scale(1);opacity:0;}
+    }
+    .countdown{
+      position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+      font-size:5rem;color:#ff1493;font-weight:700;opacity:0;z-index:30;
+      animation:fadeInOut 1s ease forwards;
+    }
+    @keyframes fadeInOut{
+      0%{opacity:0;transform:translate(-50%,-50%) scale(0.5);}
+      30%{opacity:1;transform:translate(-50%,-50%) scale(1.2);}
+      70%{opacity:1;transform:translate(-50%,-50%) scale(1);}
+      100%{opacity:0;transform:translate(-50%,-50%) scale(0.8);}
+    }
+    .start-button,.next-button{
+      position:fixed;left:50%;transform:translate(-50%,-50%);
+      padding:15px 35px;font-size:1.2rem;color:white;border:none;border-radius:50px;
+      cursor:pointer;transition:all 0.4s ease;font-weight:600;z-index:30;
+    }
+    .start-button{
+      top:50%;background:linear-gradient(45deg,#ff85c1,#ffb6d9);
+      box-shadow:0 0 15px rgba(255,105,180,0.5);
+    }
+    .next-button{
+      top:65%;background:linear-gradient(45deg,#ff69b4,#ff99cc);
+      box-shadow:0 0 15px rgba(255,105,180,0.4);opacity:0;
+    }
+    .start-button:hover,.next-button:hover{
+      transform:translate(-50%,-50%) scale(1.05);
+      box-shadow:0 0 25px rgba(255,105,180,0.8);
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <div id="score-container">Hearts: <span id="score">0</span></div>
+    <div class="pookie-meter"><div class="pookie-fill"></div></div>
+    <div id="basket">🧺</div>
+  </div>
+
+  <div class="message"></div>
+
+  <!-- tombol start dan next -->
+  <button id="startButton" class="start-button">💗 Start Game 💗</button>
+  <button id="nextButton" class="next-button">💝 Next Surprise 💝</button>
+</button>
+
+  <!-- audio -->
+  <audio id="bgMusic" loop preload="auto"><source src="game-music.mp3" type="audio/mpeg"></audio>
+  <audio id="tingSound" preload="auto"><source src="ting.mp3" type="audio/mpeg"></audio>
+  <audio id="countdownSound" preload="auto"><source src="countdown-3-2-1-jump-100761.mp3" type="audio/mpeg"></audio>
+  <audio id="cheerSound" preload="auto"><source src="cheer.mp3" type="audio/mpeg"></audio>
+
+  <script>
+    const gameContainer=document.getElementById('game-container');
+    const basket=document.getElementById('basket');
+    const scoreElement=document.getElementById('score');
+    const pookieFill=document.querySelector('.pookie-fill');
+    const message=document.querySelector('.message');
+    const startButton=document.getElementById('startButton');
+    const nextButton=document.getElementById('nextButton');
+    const bgMusic=document.getElementById('bgMusic');
+    const tingSound=document.getElementById('tingSound');
+    const countdownSound=document.getElementById('countdownSound');
+    const cheerSound = document.getElementById('cheerSound');
+
+    let score=0;let gameActive=false;const heartsToWin=19;
+    const messages=["🎂 Happy 19th Birthday 🎂","💖 My Beloved Marem! 💖","😳 Now stop being cute 😳","💸 and start being a millionaire 💸","😂 Just kidding! Love you, Bestie! 💕"];
+    let messageIndex=0;const hearts=['💖','💝','💕','💗','💞'];
+
+    // Countdown
+    function startCountdown(){
+      countdownSound.currentTime=0;countdownSound.play().catch(()=>{});
+      const numbers=["3","2","1","💗 GO! 💗"];let i=0;
+      function showNext(){
+        if(i>=numbers.length){startGame();return;}
+        const c=document.createElement("div");
+        c.className="countdown";c.textContent=numbers[i];
+        document.body.appendChild(c);
+        setTimeout(()=>c.remove(),1000);i++;setTimeout(showNext,1000);
+      }
+      showNext();
+    }
+
+    // Start Game
+    function startGame(){
+      gameActive=true;bgMusic.volume=0;bgMusic.play().catch(()=>{});fadeInMusic();
+      setInterval(createHeart,800);
+    }
+
+    function fadeInMusic(){
+      let v=0;const fade=setInterval(()=>{
+        if(v<0.6){v+=0.02;bgMusic.volume=Math.min(v,0.6);}else clearInterval(fade);
+      },100);
+    }
+    function fadeOutMusic(){
+      let v=bgMusic.volume;const fade=setInterval(()=>{
+        if(v>0){v-=0.02;bgMusic.volume=Math.max(v,0);}
+        else{clearInterval(fade);bgMusic.pause();bgMusic.currentTime=0;}
+      },100);
+    }
+
+    function moveBasket(e){
+      const x=e.type.includes('touch')?e.touches[0].clientX:e.clientX;
+      basket.style.left=`${Math.max(0,Math.min(window.innerWidth-basket.offsetWidth,x-basket.offsetWidth/2))}px`;
+    }
+    gameContainer.addEventListener('mousemove',moveBasket);
+    gameContainer.addEventListener('touchmove',moveBasket);
+
+    function createHeart(){
+      if(!gameActive)return;
+      const heart=document.createElement('div');
+      heart.className='heart';
+      heart.textContent=hearts[Math.floor(Math.random()*hearts.length)];
+      heart.style.left=Math.random()*(window.innerWidth-30)+'px';
+      heart.style.animationDuration=Math.random()*2+3+'s';
+      gameContainer.appendChild(heart);
+      const check=setInterval(()=>{
+        const hr=heart.getBoundingClientRect();
+        const br=basket.getBoundingClientRect();
+        if(hr.bottom>=br.top&&hr.left<=br.right&&hr.right>=br.left){
+          tingSound.currentTime=0;tingSound.play().catch(()=>{});
+          if(score<heartsToWin){
+            score++;scoreElement.textContent=score;
+            pookieFill.style.width=(score/heartsToWin*100)+'%';
+          }
+          const msg=document.createElement('div');
+          msg.className='float-msg';
+          msg.textContent=messages[messageIndex%messages.length];
+          messageIndex++;
+          msg.style.left=hr.left+'px';msg.style.top=hr.top+'px';
+          msg.style.color='#ff1493';msg.style.fontWeight='600';msg.style.fontSize='18px';
+          gameContainer.appendChild(msg);setTimeout(()=>msg.remove(),1200);
+          heart.remove();clearInterval(check);
+          if(score>=heartsToWin){score=heartsToWin;gameWon();}
+        }
+        if(hr.top>window.innerHeight){heart.remove();clearInterval(check);}
+      },50);
+    }
+
+    // Confetti
+    function createConfetti(){
+      for(let i=0;i<80;i++){
+        const conf=document.createElement('div');
+        conf.textContent=['💖','✨','🌸','💝','💞'][Math.floor(Math.random()*5)];
+        conf.style.position='fixed';conf.style.left=Math.random()*100+'vw';conf.style.top='-10px';
+        conf.style.fontSize='24px';conf.style.animation=`fallConf ${2+Math.random()*3}s linear forwards`;
+        conf.style.zIndex=50;document.body.appendChild(conf);
+        setTimeout(()=>conf.remove(),5000);
+      }
+    }
+    const style=document.createElement('style');
+    style.innerHTML='@keyframes fallConf{to{transform:translateY(110vh) rotate(360deg);opacity:0;}}';
+    document.head.appendChild(style);
+
+    function gameWon(){
+      if(!gameActive)return;
+      gameActive=false;fadeOutMusic();
+      message.style.opacity=1;
+      message.innerHTML="Finally you catch them all, the (💗) is your age haha 😆!<br><br>Ready for your next surprise? 🎁";
+      createConfetti();
+      
+      // UBAH TIMER INI AGAR TOMBOL NEXT MUNCUL
+      setTimeout(()=>{
+          nextButton.style.opacity = 1; // Ubah ini dari opacity 0 ke 1
+          nextButton.style.transform = 'translate(-50%, -50%) scale(1)'; // Pastikan transform normal
+      }, 2000);
+  }
+
+    // tombol start & next
+    startButton.addEventListener('click',()=>{
+      startButton.style.opacity=0;
+      setTimeout(()=>startButton.remove(),600);
+      startCountdown();
+    });
+
+  // Catatan: Next Button sudah mengarah ke envelope.html (sudah benar)
+    nextButton.addEventListener('click',()=>{
+      document.body.style.transition='opacity 1s ease';
+      document.body.style.opacity=0;
+      setTimeout(()=>window.location.href='envelope.html',1000);
+    });
+  </script>
+</body>
+</html>

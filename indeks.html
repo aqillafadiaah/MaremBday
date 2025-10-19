@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Marem Birthday🌸</title>
+  <link rel="icon" type="image/png" href="cat.png">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- GSAP & Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <style>
+    html, body {
+      height: 100%;
+      overflow: hidden; /* ✅ Cegah halaman naik-turun */
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; cursor:none; }
+
+    body {
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      background: linear-gradient(-45deg,#fee9f7,#e8f5fe,#fef2e8,#f0ffe8);
+      background-size:400% 400%;
+      animation: gradientBG 15s ease infinite;
+      font-family:'Arial Rounded MT Bold',Arial,sans-serif;
+      position:relative; /* ✅ biar gradient tetap tampil */
+      color:#333;
+      overflow:hidden;   /* cegah elemen keluar viewport */
+    }
+
+    @keyframes gradientBG {
+      0%{background-position:0% 50%;}
+      50%{background-position:100% 50%;}
+      100%{background-position:0% 50%;}
+    }
+
+    .cursor {
+      width:20px;height:20px;
+      background: rgba(255,153,204,0.7);border-radius:50%;
+      position:fixed;pointer-events:none;
+      mix-blend-mode:screen;transition:transform .2s;
+      z-index:1005;
+    }
+
+    .cursor-burst {
+      position: absolute;
+      font-size: 16px;
+       pointer-events: none;
+       z-index: 1004;
+       user-select: none;
+       will-change: transform, opacity;
+    }
+
+    .container {
+      text-align:center;
+      z-index:1010;
+      pointer-events:auto;
+    }
+
+    h1 {
+      font-size:3.5rem;
+      color:#ff69b4;
+      text-shadow:0 0 10px rgba(255,105,180,0.5);
+      margin-bottom:2rem;
+      opacity:0;
+    }
+
+    .greeting {
+      font-size:1.5rem;
+      color:#8a2be2;
+      margin-bottom:3rem;
+      min-height:2em;
+    }
+
+    .cta-button {
+      padding:1rem 2rem;
+      font-size:1.2rem;
+      background:linear-gradient(45deg,#ff69b4,#ff99cc);
+      border:none;border-radius:50px;
+      color:white;cursor:none; 
+      font-family: 'Poppins', sans-serif; 
+      font-weight:600;
+      letter-spacing:0.5px; 
+      box-shadow:0 0 15px rgba(255,105,180,0.5);
+      transition:transform .3s,box-shadow .3s;
+      opacity:0;
+      pointer-events:auto;
+    }
+
+    .cta-button:hover {
+      transform:scale(1.05);
+      box-shadow:0 0 25px rgba(255,105,180,0.7);
+    }
+
+    .floating {
+      position:absolute;
+      pointer-events:none;
+      opacity:0;
+      z-index:1008;
+    }
+
+    /* Particles (three.js) */
+    #canvas-container {
+      position:fixed;
+      top:0;left:0;width:100%;height:100%;
+      pointer-events:none;z-index:100;
+    }
+
+    /* Top emojis */
+    .top-emoji {
+      position:absolute;
+      top:20px;
+      font-size:2.5rem;
+      animation:topEmojiFloat 4s ease-in-out infinite;
+      z-index:102;pointer-events:none;
+      filter:drop-shadow(0 3px 5px rgba(0,0,0,0.15));
+    }
+    @keyframes topEmojiFloat {
+      0%,100%{transform:translateY(0) rotate(0deg);}
+      50%{transform:translateY(-20px) rotate(20deg);}
+    }
+
+    /* Ribbons */
+    .ribbon {
+      position:absolute;
+      width:150px;height:150px;border-radius:50%;
+      border:15px solid rgba(255,255,255,0.15);
+      border-top:15px solid #ff3d7f;
+      border-right:15px solid transparent;
+      transform:rotate(-45deg);
+      animation:ribbonSpin 8s linear infinite;
+      z-index:99;pointer-events:none;
+    }
+    @keyframes ribbonSpin {
+      0%{transform:rotate(-45deg);}
+      100%{transform:rotate(315deg);}
+    }
+
+    /* Side emojis */
+    .side-decoration {
+      position:absolute;
+      height:100vh;width:100px;top:0;
+      display:flex;flex-direction:column;
+      justify-content:space-around;align-items:center;
+      padding:2rem 0;z-index:100;pointer-events:none;
+    }
+    .side-decoration.left{left:0;}
+    .side-decoration.right{right:0;}
+    .side-item {
+      font-size:2.2rem;
+      animation:sideBounce 3s ease-in-out infinite;
+      filter:drop-shadow(0 3px 8px rgba(0,0,0,0.2));
+    }
+    @keyframes sideBounce {
+      0%,100%{transform:translateX(0) rotate(0);}
+      50%{transform:translateX(15px) rotate(15deg);}
+    }
+
+    /* Bubbles */
+    .bubble {
+      position:absolute;
+      background:radial-gradient(circle at 30% 30%,rgba(255,255,255,0.8),rgba(255,255,255,0.1));
+      border-radius:50%;
+      box-shadow:0 5px 15px rgba(255,255,255,0.3),inset 0 0 8px rgba(255,255,255,0.6);
+      animation:bubbleFloat 15s linear infinite;
+      opacity:0.7;z-index:95;pointer-events:none;
+    }
+    @keyframes bubbleFloat {
+      0%{transform:translateY(100vh) scale(0.3);opacity:0.3;}
+      20%{opacity:0.7;}
+      50%{transform:translateY(50vh) scale(1);}
+      80%{opacity:0.7;}
+      100%{transform:translateY(-100px) scale(1);opacity:0;}
+    }
+
+    .heart {
+      position:absolute;pointer-events:none;
+      opacity:0;z-index:1020;font-size:20px;
+    }
+
+    @media(max-width:768px){
+      h1{font-size:2rem;}
+      .greeting{font-size:1.2rem;}
+      .cta-button{font-size:1rem;}
+      .bubble{animation-duration:10s;}
+      .side-decoration{width:50px;}
+      .side-item{font-size:1.8rem;}
+      #canvas-container canvas{display:none;}
+    }
+  </style>
+</head>
+<body>
+  <div class="cursor"></div>
+  <div id="canvas-container"></div>
+
+  <!-- top emojis -->
+  <span class="top-emoji" style="left:10%;">✨</span>
+  <span class="top-emoji" style="left:30%;">🎂</span>
+  <span class="top-emoji" style="left:50%;">🎊</span>
+  <span class="top-emoji" style="left:70%;">🎀</span>
+  <span class="top-emoji" style="left:90%;">🌸</span>
+
+  <!-- ribbons -->
+  <div class="ribbon" style="top:10%;left:70%;"></div>
+  <div class="ribbon" style="top:70%;left:20%;"></div>
+
+  <!-- side emojis -->
+  <div class="side-decoration left">
+    <span class="side-item">🌈</span>
+    <span class="side-item">💖</span>
+    <span class="side-item">🎁</span>
+    <span class="side-item">✨</span>
+    <span class="side-item">🦄</span>
+  </div>
+  <div class="side-decoration right">
+    <span class="side-item">🌟</span>
+    <span class="side-item">🍰</span>
+    <span class="side-item">🏆</span>
+    <span class="side-item">🍁</span>
+    <span class="side-item">💝</span>
+  </div>
+
+  <div id="decorations"></div>
+
+  <div class="container">
+    <h1>👯‍♀️💕 To My Gorgeous Bestfriend Ever 💕👯‍♀️</h1>
+    <div class="greeting"></div>
+    <a href="cake.html" class="cta-button">🎁 Click here for Instant Happiness 🎁</button>
+  </div>
+
+  <script>
+  const cursor=document.querySelector('.cursor');
+  document.addEventListener('mousemove',e=>{
+    cursor.style.left=(e.clientX-10)+'px';
+    cursor.style.top=(e.clientY-10)+'px';
+  });
+
+  const loveEmojis = ['💖','💕','💗','💞','💘','💓'];
+  document.addEventListener('mousemove', e => {
+    const love = document.createElement('div');
+    love.className = 'cursor-burst';
+    love.innerHTML = loveEmojis[Math.floor(Math.random() * loveEmojis.length)];
+    love.style.left = e.pageX + 'px';
+    love.style.top = e.pageY + 'px';
+    document.body.appendChild(love);
+
+    gsap.to(love, {
+        y: -30 - Math.random()*20,
+        x: (Math.random() - 0.5) * 30,
+        opacity: 0,
+        scale: 0.5,
+        rotation: Math.random()*60 - 30,
+        duration: 1.2,
+        ease: "power1.out",
+        onComplete: () => love.remove()
+    });
+    });
+
+  const greetingText="💖🌸 Here's a little something to remind you, how much you mean to me hehe 🌸💖";
+  const greetingElement=document.querySelector('.greeting');
+  let charIndex=0;
+  function typeGreeting(){
+    if(charIndex<greetingText.length){
+      greetingElement.textContent+=greetingText.charAt(charIndex);
+      charIndex++;setTimeout(typeGreeting,100);
+    }
+  }
+
+  const floatingElements=['💖','✨','🌸','💫','💕'];
+  function createFloating(){
+    const e=document.createElement('div');
+    e.className='floating';
+    e.textContent=floatingElements[Math.floor(Math.random()*floatingElements.length)];
+    e.style.left=Math.random()*100+'vw';
+    e.style.top=Math.random()*100+'vh';
+    e.style.fontSize=(Math.random()*20+20)+'px';
+    document.body.appendChild(e);
+    gsap.to(e,{y:-500,x:Math.random()*100-50,rotation:Math.random()*360,duration:Math.random()*5+5,opacity:1,ease:"none",onComplete:()=>e.remove()});
+  }
+
+  function createDecorations(){
+    const deco=document.getElementById('decorations');
+    const bubbleColors=['rgba(255,255,255,0.9)','rgba(255,154,158,0.6)','rgba(251,194,235,0.7)'];
+    for(let i=0;i<40;i++){
+      const b=document.createElement('div');
+      b.classList.add('bubble');
+      const size=Math.random()*80+30;
+      b.style.width=size+'px';
+      b.style.height=size+'px';
+      b.style.left=Math.random()*100+'%';
+      b.style.top=Math.random()*100+'%';
+      const color=bubbleColors[Math.floor(Math.random()*bubbleColors.length)];
+      b.style.background=`radial-gradient(circle at 30% 30%,${color},rgba(255,255,255,0.05))`;
+      b.style.animationDuration=(Math.random()*8+10)+'s';
+      b.style.animationDelay=(Math.random()*4)+'s';
+      deco.appendChild(b);
+    }
+    gsap.utils.toArray('.bubble').forEach(b=>{
+      const d=parseFloat(b.style.animationDelay)||0;
+      gsap.fromTo(b,{opacity:0},{opacity:0.7,duration:2,delay:d,repeat:-1,yoyo:true});
+    });
+  }
+
+  function initParticles(){
+    if(window.innerWidth<600)return;
+    const c=document.getElementById('canvas-container');
+    const s=new THREE.Scene();
+    const cam=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);
+    cam.position.z=5;
+    const r=new THREE.WebGLRenderer({alpha:true});
+    r.setSize(window.innerWidth,window.innerHeight);
+    r.setClearColor(0x000000,0);
+    c.appendChild(r.domElement);
+    const g=new THREE.BufferGeometry();
+    const count=200;
+    const arr=new Float32Array(count*3);
+    for(let i=0;i<count*3;i++)arr[i]=(Math.random()-0.5)*10;
+    g.setAttribute('position',new THREE.BufferAttribute(arr,3));
+    const m=new THREE.PointsMaterial({size:0.05,color:0xffffff,transparent:true,opacity:0.8});
+    const p=new THREE.Points(g,m);
+    s.add(p);
+    function anim(){requestAnimationFrame(anim);p.rotation.x+=0.0005;p.rotation.y+=0.0005;r.render(s,cam);}
+    anim();
+  }
+
+  function createHearts(){
+    const emojis=['❤️','💖','💕','💓','💗','💘','💝','💞','💌'];
+    for(let i=0;i<20;i++){
+      setTimeout(()=>{
+        const h=document.createElement('div');
+        h.className='heart';
+        h.innerHTML=emojis[Math.floor(Math.random()*emojis.length)];
+        h.style.fontSize=(Math.random()*30+15)+'px';
+        h.style.left=Math.random()*window.innerWidth+'px';
+        h.style.top=window.innerHeight+'px';
+        document.body.appendChild(h);
+        gsap.to(h,{y:-200-Math.random()*150,x:(Math.random()-0.5)*150,opacity:0,rotation:Math.random()*180-90,duration:3+Math.random()*3,ease:"power1.out",onComplete:()=>h.remove()});
+        gsap.to(h,{scale:0.5,duration:2.5,ease:"power1.in"});
+      },i*100);
+    }
+  }
+
+  function createSparkles(){
+    const sp=['✨','⭐','🌟','💫'];
+    for(let i=0;i<15;i++){
+      setTimeout(()=>{
+        const s=document.createElement('div');
+        s.className='heart';
+        s.innerHTML=sp[Math.floor(Math.random()*sp.length)];
+        s.style.fontSize=(Math.random()*25+10)+'px';
+        s.style.left=Math.random()*window.innerWidth+'px';
+        s.style.top=Math.random()*window.innerHeight+'px';
+        document.body.appendChild(s);
+        gsap.to(s,{y:(Math.random()-0.5)*200,x:(Math.random()-0.5)*200,opacity:0,rotation:Math.random()*360,scale:2,duration:2+Math.random()*2,ease:"power1.out",onComplete:()=>s.remove()});
+      },i*200);
+    }
+  }
+
+  window.addEventListener('load',()=>{
+    gsap.to('h1',{opacity:1,duration:1,y:20,ease:"bounce.out"});
+    gsap.to('.cta-button',{opacity:1,duration:1,y:-20,ease:"back.out"});
+    typeGreeting();
+    createDecorations();
+    initParticles();
+    setInterval(createFloating,1500);
+  });
+  </script>
+</body>
+</html>
